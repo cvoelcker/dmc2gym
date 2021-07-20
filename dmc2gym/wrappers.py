@@ -1,12 +1,13 @@
 from gym import core, spaces
-from dm_control import suite
+from distracting_control import suite
 from dm_env import specs
 import numpy as np
 
 
 def _spec_to_box(spec):
     def extract_min_max(s):
-        assert s.dtype == np.float64 or s.dtype == np.float32
+        print(s.dtype)
+        # assert s.dtype == np.float64 or s.dtype == np.float32
         dim = np.int(np.prod(s.shape))
         if type(s) == specs.Array:
             bound = np.inf * np.ones(dim, dtype=np.float32)
@@ -35,13 +36,20 @@ def _flatten_obs(obs):
 
 
 class DMCWrapper(core.Env):
-    def __init__(
-        self,
+    def __init__(self,
         domain_name,
         task_name,
+        difficulty=None,
+        dynamic=False,
+        background_dataset_path=None,
+        background_dataset_videos="train",
+        background_kwargs=None,
+        camera_kwargs=None,
         task_kwargs=None,
-        visualize_reward={},
-        from_pixels=False,
+        visualize_reward=None,
+        render_kwargs=None,
+        pixels_only=True,
+        pixels_observation_key="pixels",
         height=84,
         width=84,
         camera_id=0,
@@ -50,7 +58,7 @@ class DMCWrapper(core.Env):
         channels_first=True
     ):
         assert 'random' in task_kwargs, 'please specify a seed, for deterministic behaviour'
-        self._from_pixels = from_pixels
+        self._from_pixels = True
         self._height = height
         self._width = width
         self._camera_id = camera_id
@@ -58,13 +66,21 @@ class DMCWrapper(core.Env):
         self._channels_first = channels_first
 
         # create task
-        self._env = suite.load(
-            domain_name=domain_name,
-            task_name=task_name,
+        self._env = suite.load(domain_name,
+            task_name,
+            difficulty=difficulty,
+            dynamic=dynamic,
+            background_dataset_path=background_dataset_path,
+            background_dataset_videos=background_dataset_videos,
+            background_kwargs=background_kwargs,
+            camera_kwargs=camera_kwargs,
             task_kwargs=task_kwargs,
+            environment_kwargs=environment_kwargs,
             visualize_reward=visualize_reward,
-            environment_kwargs=environment_kwargs
-        )
+            render_kwargs=render_kwargs,
+            pixels_only=pixels_only,
+            pixels_observation_key=pixels_observation_key)
+
 
         # true and normalized action spaces
         self._true_action_space = _spec_to_box([self._env.action_spec()])
@@ -76,15 +92,10 @@ class DMCWrapper(core.Env):
         )
 
         # create observation space
-        if from_pixels:
-            shape = [3, height, width] if channels_first else [height, width, 3]
-            self._observation_space = spaces.Box(
-                low=0, high=255, shape=shape, dtype=np.uint8
-            )
-        else:
-            self._observation_space = _spec_to_box(
-                self._env.observation_spec().values()
-            )
+        shape = [3, height, width] if channels_first else [height, width, 3]
+        self._observation_space = spaces.Box(
+            low=0, high=255, shape=shape, dtype=np.uint8
+        )
             
         self._state_space = _spec_to_box(
                 self._env.observation_spec().values()
