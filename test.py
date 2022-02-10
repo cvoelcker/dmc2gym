@@ -1,7 +1,7 @@
 import distracting_dmc2gym
 import matplotlib.pyplot as plt
 
-env = distracting_dmc2gym.make(domain_name='point_mass', task_name='easy', seed=1, channels_first=False)
+env = distracting_dmc2gym.make(domain_name='cheetah', task_name='run', difficulty="hard", seed=1, channels_first=False)
 
 done = False
 obs = env.reset()
