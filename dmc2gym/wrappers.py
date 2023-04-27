@@ -48,6 +48,8 @@ class DMCWrapper(core.Env):
         frame_skip=1,
         environment_kwargs=None,
         channels_first=True,
+        action_noise=False,
+        action_noise_level=0.0,
     ):
         assert (
             "random" in task_kwargs
@@ -58,6 +60,9 @@ class DMCWrapper(core.Env):
         self._camera_id = camera_id
         self._frame_skip = frame_skip
         self._channels_first = channels_first
+
+        self._action_noise = action_noise
+        self._action_noise_level = action_noise_level
 
         # create task
         self._env = suite.load(
@@ -138,6 +143,11 @@ class DMCWrapper(core.Env):
         assert self._true_action_space.contains(action)
         reward = 0
         extra = {"internal_state": self._env.physics.get_state().copy()}
+
+        if self._action_noise:
+            action += np.random.normal(
+                scale=self._action_noise_level, size=action.shape
+            )
 
         for _ in range(self._frame_skip):
             time_step = self._env.step(action)
