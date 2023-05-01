@@ -49,6 +49,7 @@ class DMCWrapper(core.Env):
         environment_kwargs=None,
         channels_first=True,
         action_noise=False,
+        action_noise_type="normal",
         action_noise_level=0.0,
     ):
         assert (
@@ -62,6 +63,7 @@ class DMCWrapper(core.Env):
         self._channels_first = channels_first
 
         self._action_noise = action_noise
+        self._action_noise_type = action_noise_type
         self._action_noise_level = action_noise_level
 
         # create task
@@ -78,6 +80,32 @@ class DMCWrapper(core.Env):
         self._norm_action_space = spaces.Box(
             low=-1.0, high=1.0, shape=self._true_action_space.shape, dtype=np.float32
         )
+
+        if self._action_noise:
+            if self._action_noise_type == "normal":
+                self._action_noise_distribution = lambda x: np.random.normal(
+                    x, self._action_noise_level
+                )
+            elif self._action_noise_type == "uniform":
+                self._action_noise_distribution = lambda x: np.random.uniform(
+                    x - self._action_noise_level, x + self._action_noise_level
+                )
+            elif self._action_noise_type == "bimodal":
+                self._action_noise_distribution = lambda x: np.random.choice(
+                    [
+                        np.random.normal(
+                            x - self._action_noise_level, self._action_noise_level / 2.0
+                        ),
+                        np.random.normal(
+                            x + self._action_noise_level, self._action_noise_level / 2.0
+                        ),
+                    ]
+                )
+            else:
+                raise NotImplementedError("Unknown action noise type")
+
+        else:
+            self._action_noise_distribution = lambda x: x
 
         # create observation space
         if from_pixels:
