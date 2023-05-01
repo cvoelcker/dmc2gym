@@ -173,9 +173,7 @@ class DMCWrapper(core.Env):
         extra = {"internal_state": self._env.physics.get_state().copy()}
 
         if self._action_noise:
-            action += np.random.normal(
-                scale=self._action_noise_level, size=action.shape
-            )
+            action = self._action_noise_distribution(action)
 
         for _ in range(self._frame_skip):
             time_step = self._env.step(action)
