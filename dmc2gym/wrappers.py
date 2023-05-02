@@ -1,3 +1,4 @@
+import random
 from gymnasium import core, spaces
 from dm_control import suite
 from dm_env import specs
@@ -91,16 +92,14 @@ class DMCWrapper(core.Env):
                     x - self._action_noise_level, x + self._action_noise_level
                 )
             elif self._action_noise_type == "bimodal":
-                self._action_noise_distribution = lambda x: np.random.choice(
-                    [
-                        np.random.normal(
-                            x - self._action_noise_level, self._action_noise_level / 2.0
-                        ),
-                        np.random.normal(
-                            x + self._action_noise_level, self._action_noise_level / 2.0
-                        ),
-                    ]
-                )
+                self._action_noise_distribution = lambda x: [
+                    np.random.normal(
+                        x - self._action_noise_level, self._action_noise_level / 2.0
+                    ),
+                    np.random.normal(
+                        x + self._action_noise_level, self._action_noise_level / 2.0
+                    ),
+                ][random.randint(0, 1)]
             else:
                 raise NotImplementedError("Unknown action noise type")
 
