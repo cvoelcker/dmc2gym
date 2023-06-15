@@ -1,3 +1,4 @@
+import functools
 import gymnasium as gym
 from gymnasium.envs.registration import register
 
@@ -38,7 +39,7 @@ def make(
             task_kwargs["time_limit"] = time_limit
         register(
             id=env_id,
-            entry_point="dmc2gym.wrappers:DMCWrapper",
+            entry_point="lambda_ac.third_party.dmc2gym.dmc2gym.wrappers:DMCWrapper",
             kwargs=dict(
                 domain_name=domain_name,
                 task_name=task_name,
@@ -105,7 +106,7 @@ def vector_make(
                 task_kwargs["time_limit"] = time_limit
             register(
                 id=env_id,
-                entry_point="dmc2gym.wrappers:DMCWrapper",
+                entry_point="lambda_ac.third_party.dmc2gym.dmc2gym.wrappers:DMCWrapper",
                 kwargs=dict(
                     domain_name=domain_name,
                     task_name=task_name,
@@ -124,4 +125,6 @@ def vector_make(
                 ),
                 max_episode_steps=max_episode_steps,
             )
-    return gym.vector.AsyncVectorEnv([lambda: gym.make(id) for id in ids])
+    return gym.vector.AsyncVectorEnv(
+        [functools.partial(lambda x: gym.make(x), x=id) for id in ids]
+    )
