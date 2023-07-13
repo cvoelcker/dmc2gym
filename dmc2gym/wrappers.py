@@ -159,7 +159,11 @@ class DMCWrapper(core.Env):
     def action_space(self):
         return self._norm_action_space
 
-    def seed(self, seed):
+    def seed(self, seed=None):
+        if seed is None:
+            seed = self._seed + 1
+        else:
+            self._seed = seed
         self._true_action_space.seed(seed)
         self._norm_action_space.seed(seed)
         self._observation_space.seed(seed)
@@ -185,7 +189,7 @@ class DMCWrapper(core.Env):
         extra["discount"] = time_step.discount
         return obs, reward, False, done, extra
 
-    def reset(self, seed):
+    def reset(self, seed=None):
         self.seed(seed)
         time_step = self._env.reset()
         self.current_state = _flatten_obs(time_step.observation)
