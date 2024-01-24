@@ -6,6 +6,7 @@ from gymnasium.envs.registration import register
 def make(
     domain_name,
     task_name,
+    discrete=False,
     seed=1,
     visualize_reward=True,
     from_pixels=False,
@@ -21,7 +22,7 @@ def make(
     action_noise_type="normal",
     action_noise_level=0.0,
 ):
-    env_id = "dmc_%s_%s_%s-v1" % (domain_name, task_name, seed)
+    env_id = "dmc_%s_%s_%s_%s-v1" % (domain_name, task_name, seed, discrete)
 
     if from_pixels:
         assert (
@@ -32,14 +33,19 @@ def make(
     max_episode_steps = (episode_length + frame_skip - 1) // frame_skip
 
     if not env_id in gym.envs.registry.keys():
+        print(env_id)
         task_kwargs = {}
         if seed is not None:
             task_kwargs["random"] = seed
         if time_limit is not None:
             task_kwargs["time_limit"] = time_limit
+        if discrete:
+            entry_point = "dmc2gym.wrappers:DiscretizedDMCWrapper"
+        else:
+            entry_point = "dmc2gym.wrappers:DMCWrapper"
         register(
             id=env_id,
-            entry_point="lambda_ac.third_party.dmc2gym.dmc2gym.wrappers:DMCWrapper",
+            entry_point=entry_point,
             kwargs=dict(
                 domain_name=domain_name,
                 task_name=task_name,

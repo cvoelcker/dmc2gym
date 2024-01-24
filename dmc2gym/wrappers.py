@@ -1,4 +1,6 @@
+import itertools
 import random
+from typing import Dict, Optional
 from gymnasium import core, spaces
 from dm_control import suite
 from dm_env import specs
@@ -202,3 +204,57 @@ class DMCWrapper(core.Env):
         width = width or self._width
         camera_id = camera_id or self._camera_id
         return self._env.physics.render(height=height, width=width, camera_id=camera_id)
+
+
+class DiscretizedDMCWrapper(DMCWrapper):
+    def __init__(
+        self,
+        domain_name,
+        task_name,
+        task_kwargs: Optional[Dict] = None,
+        visualize_reward={},
+        from_pixels=False,
+        height=84,
+        width=84,
+        camera_id=0,
+        frame_skip=1,
+        environment_kwargs=None,
+        channels_first=True,
+        action_noise=False,
+        action_noise_type="normal",
+        action_noise_level=0.0,
+    ):
+        assert (
+            task_kwargs is None or "random" in task_kwargs
+        ), "please specify a seed, for deterministic behaviour"
+        super().__init__(
+            domain_name,
+            task_name,
+            task_kwargs,
+            visualize_reward,
+            from_pixels,
+            height,
+            width,
+            camera_id,
+            frame_skip,
+            environment_kwargs,
+            channels_first,
+            action_noise,
+            action_noise_type,
+            action_noise_level,
+        )
+
+        action_length = np.prod(self._true_action_space.shape)
+        lst = list(itertools.product([-1.0, 1.0], repeat=action_length))
+        self._discrete_actions = np.array(lst, dtype=np.float32)
+        self._norm_action_space = spaces.Discrete(len(self._discrete_actions))
+
+    def _convert_action(self, action_idx):
+        action = self._discrete_actions[action_idx]
+        # action = action.astype(np.float64)
+        # true_delta = self._true_action_space.high - self._true_action_space.low
+        # norm_delta = self._norm_action_space.high - self._norm_action_space.low
+        # action = (action - self._norm_action_space.low) / norm_delta
+        # action = action * true_delta + self._true_action_space.low
+        # action = action.astype(np.float32)
+        return action
