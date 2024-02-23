@@ -124,4 +124,6 @@ def vector_make(
                 ),
                 max_episode_steps=max_episode_steps,
             )
-    return gym.vector.AsyncVectorEnv([lambda: gym.make(id) for id in ids])
+    # annoying python scoping fix
+    env_fn = [(lambda x: lambda: gym.make(x))(id) for id in ids]
+    return gym.vector.AsyncVectorEnv(env_fn)

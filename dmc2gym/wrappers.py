@@ -121,9 +121,6 @@ class DMCWrapper(core.Env):
 
         self.current_state = None
 
-        # set seed
-        self.seed(seed=task_kwargs.get("random", 1))
-
     def __getattr__(self, name):
         return getattr(self._env, name)
 
@@ -186,6 +183,8 @@ class DMCWrapper(core.Env):
         return obs, reward, False, done, extra
 
     def reset(self, seed):
+        if isinstance(seed, np.ndarray):
+            seed = seed.item()
         self.seed(seed)
         time_step = self._env.reset()
         self.current_state = _flatten_obs(time_step.observation)
